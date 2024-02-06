@@ -1,4 +1,4 @@
-import { Pagination } from "@nextui-org/react";
+import { Button, Pagination } from "@nextui-org/react";
 import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 import { prisma } from "~/prisma.server";
@@ -36,7 +36,9 @@ export default function Index() {
 							<Link to={`/posts/${post.id}`} className="text-xl">
 								{post.title}
 							</Link>
-							<div className="text-sm text-gray-400">{new Date(post.created_at).toLocaleString()}</div>
+							<div className="text-sm text-gray-400">
+								{new Date(post.created_at).toLocaleString()}
+							</div>
 						</div>
 					);
 				})}
@@ -49,6 +51,9 @@ export default function Index() {
 						setSearchParams(newSearchParams);
 					}}
 				/>
+				<Link className="mt-4" to="/posts/new">
+					<Button color="primary">新增文章</Button>
+				</Link>
 			</div>
 		</div>
 	);

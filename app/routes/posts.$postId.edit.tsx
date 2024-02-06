@@ -1,9 +1,25 @@
 import { Button, Input, Textarea } from "@nextui-org/react";
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
-import { Form, useLoaderData, useNavigation } from "@remix-run/react";
+import {
+	ActionFunctionArgs,
+	LoaderFunctionArgs,
+	json,
+	redirect,
+} from "@remix-run/node";
+import {
+	Form,
+	useLoaderData,
+	useNavigation,
+	useSubmit,
+} from "@remix-run/react";
 import { prisma } from "~/prisma.server";
+import { auth } from "~/session.server";
 
 export const loader = async (c: LoaderFunctionArgs) => {
+	const user = await auth(c.request);
+	if (!user.username) {
+		return redirect("/signin");
+	}
+
 	const postId = c.params.postId as string;
 	const post = await prisma.post.findUnique({
 		where: {
@@ -29,22 +45,41 @@ export const action = async (c: ActionFunctionArgs) => {
 	const content = formData.get("content") as string;
 	const slug = formData.get("slug") as string;
 
-	await prisma.post.update({
-		where: {
-			id: postId,
-		},
-		data: {
-			id: slug,
-			title,
-			content,
-		},
-	});
+	const action = formData.get("action") as "edit" | "delete";
 
+	if (action === "delete") {
+		await prisma.post.delete({
+			where: {
+				id: postId,
+			},
+		});
+		return redirect("/");
+	} else {
+		await prisma.post.update({
+			where: {
+				id: postId,
+			},
+			data: {
+				id: slug,
+				title,
+				content,
+			},
+		});
+	}
 	return redirect(`/posts/${slug}`);
 };
 export default function Page() {
 	const loaderData = useLoaderData<typeof loader>();
 	const navigation = useNavigation();
+
+	const isDeleting =
+		navigation.state === "submitting" &&
+		navigation.formData?.get("action") === "delete";
+	const isEditing =
+		navigation.state === "submitting" &&
+		navigation.formData?.get("action") === "edit";
+
+	const submit = useSubmit();
 
 	return (
 		<div className="p-12">
@@ -63,11 +98,31 @@ export default function Page() {
 						defaultValue={loaderData.post.content}
 					/>
 					<Button
-						isLoading={navigation.state === "submitting"}
+						name="action"
+						value="edit"
+						isLoading={isEditing}
 						type="submit"
 						color="primary"
 					>
 						更新
+					</Button>
+					<Button
+						name="action"
+						value="delete"
+						isLoading={isDeleting}
+						onClick={(_) => {
+							if (confirm("确定删除吗？")) {
+								const formData = new FormData();
+								formData.set("action", "delete");
+								submit(formData, {
+									method: "POST",
+									action: `/posts/${loaderData.post.id}/delete`,
+								});
+							}
+						}}
+						color="danger"
+					>
+						删除
 					</Button>
 				</div>
 			</Form>

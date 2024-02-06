@@ -58,7 +58,7 @@ export default function Page() {
 	const actionData = useActionData<typeof action>();
 	const errors = actionData?.errors;
 
-  const navigation = useNavigation()
+	const navigation = useNavigation();
 
 	return (
 		<div>
@@ -83,7 +83,11 @@ export default function Page() {
 						name="content"
 						label="内容"
 					/>
-					<Button isLoading={navigation.state === 'submitting'} type="submit" color="primary">
+					<Button
+						isLoading={navigation.state === "submitting"}
+						type="submit"
+						color="primary"
+					>
 						发布
 					</Button>
 				</div>
